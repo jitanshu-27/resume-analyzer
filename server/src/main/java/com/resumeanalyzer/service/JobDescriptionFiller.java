@@ -35,9 +35,10 @@ public final class JobDescriptionFiller {
             "implementing", "maintain", "maintaining", "ensure", "ensuring", "collaborate",
             "collaborating", "provide", "providing", "support", "supporting", "create",
             "creating", "manage", "managing", "perform", "performing", "participate",
-            "contribute", "contributing", "deliver", "delivering",
+            "contribute", "contributing", "deliver", "delivering", "write", "writes", "writing",
             // generic role words
-            "developer", "engineer", "software", "systems", "degree");
+            "developer", "developers", "engineer", "engineers", "software", "systems", "degree",
+            "graduate", "graduates");
 
     private JobDescriptionFiller() {}
 

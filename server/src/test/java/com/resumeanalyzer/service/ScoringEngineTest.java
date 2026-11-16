@@ -220,4 +220,12 @@ class ScoringEngineTest {
         assertTrue(partial.score() < 100.0);
         assertEquals(java.util.List.of("docker"), partial.missingKeywords());
     }
+
+    @Test
+    void pluralAndVerbFormsOfFillerAreNotTreatedAsKeywords() {
+        var result = ScoringEngine.computeMatch("Java Docker", "Graduate developers write Java Docker Kafka");
+
+        assertEquals(java.util.List.of("kafka"), result.missingKeywords());
+        assertEquals(66.7, result.score());
+    }
 }

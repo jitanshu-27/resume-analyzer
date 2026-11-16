@@ -13,7 +13,8 @@ import java.util.regex.Pattern;
  */
 public final class SuggestionEngine {
 
-    // Raw cosine-similarity scores run low, so this only flags clearly unrelated resumes.
+// The match score is the share of the job's keywords found in the resume, so a score
+// below this means almost none of them were.
     private static final double LOW_OVERLAP_SCORE = 15.0;
     private static final double LOW_SKILLS_COVERAGE = 25.0;
     private static final int MAX_KEYWORDS_SHOWN = 5;

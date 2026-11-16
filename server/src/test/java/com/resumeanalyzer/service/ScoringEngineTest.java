@@ -117,4 +117,107 @@ class ScoringEngineTest {
         assertTrue(result.missingKeywords().isEmpty());
     }
 
+        // ---- Score = share of the job description's keywords found in the resume ----
+
+    @Test
+    void scoreIsTheShareOfJobKeywordsFoundInTheResume() {
+        var result = ScoringEngine.computeMatch("Java Spring", "Java Spring Docker Kubernetes");
+
+        assertEquals(50.0, result.score());
+    }
+
+    @Test
+    void coveringEveryRequirementScoresMaximumEvenWithLotsOfOtherContent() {
+        String resume = "Built dashboards, wrote reports, organised events, led a club of forty students, "
+                + "mentored juniors and presented demos. Skills: Java, Spring, Docker, MySQL, React, Git.";
+
+        var result = ScoringEngine.computeMatch(resume, "Java Spring Docker");
+
+        assertEquals(100.0, result.score());
+        assertTrue(result.missingKeywords().isEmpty());
+    }
+
+    @Test
+    void extraResumeContentNeverLowersTheScore() {
+        String jd = "Java Spring Docker Kubernetes";
+
+        double plain = ScoringEngine.computeMatch("Java Spring", jd).score();
+        double padded = ScoringEngine.computeMatch("Java Spring plus a long paragraph about hobbies, "
+                + "travel, photography and cooking that has nothing to do with the role", jd).score();
+
+        assertEquals(plain, padded);
+    }
+
+    @Test
+    void anUnrelatedResumeScoresZero() {
+        var result = ScoringEngine.computeMatch("Graphic designer skilled in Photoshop and Illustrator",
+                "Java Spring Docker");
+
+        assertEquals(0.0, result.score());
+    }
+
+    @Test
+    void aJobKeywordRepeatedManyTimesStillCountsOnce() {
+        var result = ScoringEngine.computeMatch("Java", "Java Java Java Docker");
+
+        assertEquals(50.0, result.score());
+    }
+
+    @Test
+    void scoreIsRoundedToOneDecimal() {
+        assertEquals(33.3, ScoringEngine.computeMatch("Java", "Java Spring Docker").score());
+        assertEquals(66.7, ScoringEngine.computeMatch("Java Spring", "Java Spring Docker").score());
+    }
+
+    @Test
+    void caseAndPunctuationDoNotAffectMatching() {
+        assertEquals(100.0, ScoringEngine.computeMatch("JAVA, spring!", "java Spring").score());
+    }
+
+    @Test
+    void anEmptyJobDescriptionScoresZeroWithNothingMissing() {
+        var result = ScoringEngine.computeMatch("Java Spring Docker", "");
+
+        assertEquals(0.0, result.score());
+        assertTrue(result.missingKeywords().isEmpty());
+    }
+
+    @Test
+    void missingKeywordsAreRankedByHowOftenTheJobMentionsThem() {
+        var result = ScoringEngine.computeMatch("Java", "kafka redis redis docker docker docker");
+
+        assertEquals(java.util.List.of("docker", "redis", "kafka"), result.missingKeywords());
+    }
+
+    @Test
+    void keywordsMentionedEquallyOftenKeepTheJobDescriptionOrder() {
+        var result = ScoringEngine.computeMatch("Java", "zeta alpha mike");
+
+        assertEquals(java.util.List.of("zeta", "alpha", "mike"), result.missingKeywords());
+    }
+
+    @Test
+    void missingKeywordsAreCappedAtFifteen() {
+        String jd = "alpha bravo charlie delta echo foxtrot golf hotel india juliet "
+                + "kilo lima mike november oscar papa quebec romeo sierra tango";
+
+        var result = ScoringEngine.computeMatch("Java", jd);
+
+        assertEquals(15, result.missingKeywords().size());
+        assertEquals("alpha", result.missingKeywords().get(0));
+        assertEquals("oscar", result.missingKeywords().get(14));
+    }
+
+    @Test
+    void scoreAndMissingKeywordsTellTheSameStory() {
+        String jd = "Java Spring Docker";
+
+        var complete = ScoringEngine.computeMatch("Java Spring Docker", jd);
+        var partial = ScoringEngine.computeMatch("Java Spring", jd);
+
+        assertEquals(100.0, complete.score());
+        assertTrue(complete.missingKeywords().isEmpty());
+        assertTrue(partial.score() < 100.0);
+        assertEquals(java.util.List.of("docker"), partial.missingKeywords());
+    }
 }

@@ -3,91 +3,54 @@ package com.resumeanalyzer.service;
 import java.util.*;
 
 /**
- * Compares a resume against a job description using TF-IDF weighted cosine
- * similarity, treating the two texts as a tiny 2-document corpus.
+ * Compares a resume against a job description by keyword coverage: the match score is the share
+ * of the job description's distinct keywords that also appear in the resume.
  *
- * Why TF-IDF over plain word-overlap: a word that appears in BOTH texts but is
- * generic (e.g. "team", "experience") should count for less than a word that's
- * rare across the two documents but present in both (e.g. "kubernetes"). IDF is
- * what down-weights the generic word and up-weights the specific one.
+ * Coverage answers the question the user is asking, "does my resume cover what this job asks
+ * for?". A similarity measure such as cosine similarity also penalises resume content that has
+ * nothing to do with the job, so a resume containing every requirement still scored far below 100.
+ *
+ * Missing keywords are ranked by how often the job description mentions them. Words that fill job
+ * postings but are not skills are removed first (see JobDescriptionFiller).
  */
 public final class ScoringEngine {
+
+    private static final int MAX_MISSING_KEYWORDS = 15;
 
     private ScoringEngine() {}
 
     public record MatchResult(double score, List<String> missingKeywords) {}
 
     public static MatchResult computeMatch(String resumeText, String jdText) {
-        List<String> resumeTokens = JobDescriptionFiller.withoutFiller(TextTokenizer.tokenize(resumeText));
-        List<String> jdTokens = JobDescriptionFiller.withoutFiller(TextTokenizer.tokenize(jdText));
+        Set<String> resumeTerms = new HashSet<>(JobDescriptionFiller.withoutFiller(TextTokenizer.tokenize(resumeText)));
+        Map<String, Integer> jdCounts = countTerms(JobDescriptionFiller.withoutFiller(TextTokenizer.tokenize(jdText)));
 
-        Set<String> vocabulary = new HashSet<>();
-        vocabulary.addAll(resumeTokens);
-        vocabulary.addAll(jdTokens);
-
-        Map<String, Double> resumeTf = termFrequency(resumeTokens);
-        Map<String, Double> jdTf = termFrequency(jdTokens);
-        Map<String, Double> idf = inverseDocumentFrequency(vocabulary, resumeTokens, jdTokens);
-
-        double dot = 0, resumeNorm = 0, jdNorm = 0;
-        for (String term : vocabulary) {
-            double resumeWeight = resumeTf.getOrDefault(term, 0.0) * idf.get(term);
-            double jdWeight = jdTf.getOrDefault(term, 0.0) * idf.get(term);
-
-            dot += resumeWeight * jdWeight;
-            resumeNorm += resumeWeight * resumeWeight;
-            jdNorm += jdWeight * jdWeight;
+        if (jdCounts.isEmpty()) {
+            return new MatchResult(0.0, List.of());
         }
 
-        double cosineSimilarity = (resumeNorm == 0 || jdNorm == 0)
-                ? 0.0
-                : dot / (Math.sqrt(resumeNorm) * Math.sqrt(jdNorm));
+        long found = jdCounts.keySet().stream().filter(resumeTerms::contains).count();
+        double score = Math.round(found * 1000.0 / jdCounts.size()) / 10.0; // one decimal place, out of 100
 
-        double score = Math.round(cosineSimilarity * 1000.0) / 10.0; // -> one decimal place, out of 100
-
-        List<String> missingKeywords = findMissingKeywords(jdTf, resumeTf, idf);
-
-        return new MatchResult(score, missingKeywords);
+        return new MatchResult(score, findMissingKeywords(jdCounts, resumeTerms));
     }
 
-    private static Map<String, Double> termFrequency(List<String> tokens) {
-        if (tokens.isEmpty()) return Map.of();
-        Map<String, Double> counts = new HashMap<>();
+    /** Counts each term, keeping the order in which the terms first appear in the text. */
+    private static Map<String, Integer> countTerms(List<String> tokens) {
+        Map<String, Integer> counts = new LinkedHashMap<>();
         for (String token : tokens) {
-            counts.merge(token, 1.0, Double::sum);
+            counts.merge(token, 1, Integer::sum);
         }
-        counts.replaceAll((term, count) -> count / tokens.size());
         return counts;
     }
 
-    private static Map<String, Double> inverseDocumentFrequency(
-            Set<String> vocabulary, List<String> resumeTokens, List<String> jdTokens) {
-
-        Set<String> resumeSet = new HashSet<>(resumeTokens);
-        Set<String> jdSet = new HashSet<>(jdTokens);
-        int totalDocs = 2;
-
-        Map<String, Double> idf = new HashMap<>();
-        for (String term : vocabulary) {
-            int docFrequency = (resumeSet.contains(term) ? 1 : 0) + (jdSet.contains(term) ? 1 : 0);
-            // Smoothed IDF (like scikit-learn's default): avoids a zero weight
-            // for terms that happen to appear in both documents.
-            double value = Math.log((double) (totalDocs + 1) / (docFrequency + 1)) + 1;
-            idf.put(term, value);
-        }
-        return idf;
-    }
-
-    /** JD terms the resume doesn't contain at all, ranked by how distinctive they are in the JD. */
-    private static List<String> findMissingKeywords(
-            Map<String, Double> jdTf, Map<String, Double> resumeTf, Map<String, Double> idf) {
-
-        return jdTf.keySet().stream()
-                .filter(term -> !resumeTf.containsKey(term))
-                .sorted((a, b) -> Double.compare(
-                        jdTf.get(b) * idf.get(b),
-                        jdTf.get(a) * idf.get(a)))
-                .limit(15)
+    /** Job description terms the resume doesn't contain, most mentioned first; ties keep the job description's order. */
+    private static List<String> findMissingKeywords(Map<String, Integer> jdCounts, Set<String> resumeTerms) {
+        return jdCounts.entrySet().stream()
+                .filter(entry -> !resumeTerms.contains(entry.getKey()))
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(MAX_MISSING_KEYWORDS)
+                .map(Map.Entry::getKey)
                 .toList();
     }
 }

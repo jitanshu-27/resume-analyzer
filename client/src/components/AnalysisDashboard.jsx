@@ -13,8 +13,9 @@ export default function AnalysisDashboard({ analysis }) {
           <h2>Match score</h2>
           <ScoreRing score={matchScore} />
           <p className="muted small">
-            Scores are relative. Compare the same resume across different job descriptions rather
-            than reading one number as a grade.
+            The share of the job description&apos;s keywords that appear in your resume. Job
+            descriptions differ in how much they list, so compare the same resume across jobs
+            rather than reading one number as a grade.
           </p>
         </section>
 

@@ -1417,3 +1417,35 @@ a {
   display: flex;
   gap: 0.75rem;
 }
+
+/* ---------- Server starting notice ---------- */
+
+.wake-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #cfe6e9;
+  border-radius: 12px;
+  background: var(--teal-soft);
+  color: var(--teal-dark);
+  font-size: 0.9rem;
+}
+
+.wake-notice::before {
+  content: '';
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--teal);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wake-notice::before {
+    animation: none;
+  }
+}

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { checkHealth } from '../services/api';
 import Navbar from './Navbar';
+import ServerWakingNotice from './ServerWakingNotice';
 
 const currentYear = new Date().getFullYear();
 
@@ -17,6 +18,7 @@ export default function Layout() {
     <div className="app">
       <Navbar />
       <main className="container page-content">
+        <ServerWakingNotice />
         <Outlet />
       </main>
       <footer className="footer">

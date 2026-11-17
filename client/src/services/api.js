@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getToken } from './authStorage';
+import { trackRequest } from './slowRequests';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
@@ -15,12 +16,19 @@ export const setUnauthorizedHandler = (handler) => {
 api.interceptors.request.use((config) => {
   const token = getToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  // Lets the "server is starting up" notice know how long this request has been waiting.
+  config.finishTracking = trackRequest();
   return config;
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    response.config.finishTracking?.();
+    return response;
+  },
   (error) => {
+    error.config?.finishTracking?.();
+
     const status = error.response?.status;
     const isAuthRequest = (error.config?.url ?? '').startsWith('/auth/');
 

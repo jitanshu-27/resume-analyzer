@@ -63,6 +63,31 @@ export default function AnalysisDashboard({ analysis }) {
         </section>
       </div>
 
+      <details className="card how-score">
+        <summary>How the score is calculated</summary>
+        <ul>
+          <li>
+            The score is the share of the job description&apos;s distinct keywords that also appear in
+            your resume. Finding 8 of 10 keywords gives 80%.
+          </li>
+          <li>
+            Punctuation, common words and the filler that job postings use (&quot;required&quot;,
+            &quot;strong&quot;, &quot;looking for&quot;) are ignored. A few technical terms, such as C++,
+            CI/CD and Node.js, are kept whole.
+          </li>
+          <li>A keyword counts once, however often the job description repeats it.</li>
+          <li>
+            Missing keywords are ranked by how often the job description mentions them, and up to 15
+            are shown.
+          </li>
+          <li>
+            Keywords are matched as exact words. Capital letters don&apos;t matter, but spelling does:
+            &quot;API&quot; and &quot;APIs&quot; count as different words. Use the wording the job
+            description uses, wherever it genuinely applies.
+          </li>
+        </ul>
+      </details>
+
       <details className="card job-description">
         <summary>Job description used</summary>
         <p>{jobDescriptionText}</p>

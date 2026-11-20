@@ -69,6 +69,7 @@ export default function Signup() {
           autoComplete="new-password"
           required
           minLength={8}
+          hint="At least 8 characters."
           value={form.password}
           onChange={handleChange}
           error={fieldErrors.password}

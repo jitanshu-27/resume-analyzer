@@ -1,0 +1,22 @@
+// A short backend internship posting that goes with the sample resume in public/sample-resume.pdf.
+export const SAMPLE_JOB_DESCRIPTION = [
+  'Backend Developer Intern',
+  '',
+  'Responsibilities',
+  '- Build and maintain REST APIs using Java and Spring Boot',
+  '- Design a relational schema and write SQL queries in MySQL or PostgreSQL',
+  '- Write unit tests with JUnit and Mockito and join code reviews',
+  '- Use Git and pull requests',
+  '- Work with Docker and CI/CD',
+  '',
+  'Requirements',
+  '- Java and object oriented programming',
+  '- Spring Boot, REST APIs and SQL',
+  '- Git and basic Linux',
+  '- Problem solving and communication skills',
+  '',
+  'Nice to have',
+  '- Cloud experience, ideally AWS',
+  '- Kubernetes or Redis',
+  '- Authentication with JWT',
+].join('\n');

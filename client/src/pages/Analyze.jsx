@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FileDropzone from '../components/FileDropzone';
 import FormField from '../components/FormField';
+import { SAMPLE_JOB_DESCRIPTION } from '../data/sampleJobDescription';
 import { createAnalysis } from '../services/analyses';
 import { parseApiError } from '../services/errors';
 import { uploadResume } from '../services/resumes';
@@ -42,6 +43,21 @@ export default function Analyze() {
     setUploaded(null);
   };
 
+  // Use the sample job description without silently replacing visitor text.
+  const handleUseSample = () => {
+    if (
+      jobDescription.trim() &&
+      !window.confirm(
+        'Replace the job description you typed with the sample?'
+      )
+    ) {
+      return;
+    }
+
+    setJobDescription(SAMPLE_JOB_DESCRIPTION);
+    setFieldErrors({});
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -56,7 +72,9 @@ export default function Analyze() {
     const description = jobDescription.trim();
     if (!description) {
       setError('');
-      setFieldErrors({ jobDescriptionText: 'Paste the job description you are applying for.' });
+      setFieldErrors({
+        jobDescriptionText: 'Paste the job description you are applying for.',
+      });
       return;
     }
 
@@ -95,6 +113,28 @@ export default function Analyze() {
           and show you how well they match.
         </p>
       </header>
+
+      {/* Sample files and job description shortcuts */}
+      <div className="sample-help">
+        <p>No resume handy? Try the sample files.</p>
+        <div className="sample-actions">
+          <a
+            className="btn btn-secondary"
+            href="/sample-resume.pdf"
+            download="sample-resume.pdf"
+          >
+            Download sample resume
+          </a>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={busy}
+            onClick={handleUseSample}
+          >
+            Use sample job description
+          </button>
+        </div>
+      </div>
 
       {error && <p className="form-banner error" role="alert">{error}</p>}
 
